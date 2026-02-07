@@ -1,95 +1,99 @@
 import java.util.*;
 
+// SelfObject class implements Self 
 public class SelfObject {
 
-    // maps slot name -> referenced object
-    // collection of slots
+    // Maps slot names strings to other SelfObjects
+    // This represents the object's slots its fields or members
     private Map<String, SelfObject> slots = new HashMap<>();
 
-    // slots that are parents
-    // used only during message lookup
+    // A set of slot names that are designated as parent slots
+    // Used for inheritance and message lookup
     private Set<String> parentSlots = new HashSet<>();
 
-    // behavior fields 
-    // if not null, this object behaves like a method
-    // evaluating will copy and send these messages
+    // List of messages (strings) that define the object's behavior
+    // If not null, evaluating the object will send these messages to a copy
     private List<String> messages = null;
 
-    // if not null, this object is a primitive value
+    // Primitive value stored in the object (e.g., a number)
+    // If not null, evaluating the object produces a copy with this value
     private Object primitiveValue = null;
 
-    // if not null, this object is a primitive function
+    // Primitive function stored in the object
+    // If not null, evaluating the object applies this function to a copy
     private Primitive primitiveFunction = null;
 
-    // cababilities
-    // evaluate
-    public SelfObject evaluate() {
 
-        // returns a copy
+    // Capabilities
+
+    /**
+     * Evaluate the object
+     * If it has a primitive value, return a copy of itself
+     * If it has a primitive function, apply it to a copy
+     * If it has a list of messages (like a function body), copy itself, send messages, return last result
+     * Otherwise, return itself
+     */
+    public SelfObject evaluate() {
         if (primitiveValue != null) {
             return copy();
         }
-
-        // copy first
         if (primitiveFunction != null) {
             SelfObject copy = copy();
             return primitiveFunction.apply(copy);
         }
-
-        // list of messages that behaves like a function call
-        // copy first, send messages, return result of last message
         if (messages != null) {
             SelfObject copy = copy();
             SelfObject result = copy;
-
             for (String message : messages) {
                 result = copy.sendAMessage(message);
             }
             return result;
         }
-
-        // otherwise, just return a copy
         return this;
     }
 
-    // copy
+    /**
+     * Create a copy of this object
+     * Copies slots and parent slots
+     * Copies messages, primitive value, and primitive function
+     */
     public SelfObject copy() {
-
         SelfObject copy = new SelfObject();
-        // copy slot references
         copy.slots.putAll(this.slots);
-        // copy parent designations
         copy.parentSlots.addAll(this.parentSlots);
-        // copy behavior information
         copy.messages = this.messages;
         copy.primitiveValue = this.primitiveValue;
         copy.primitiveFunction = this.primitiveFunction;
-
         return copy;
     }
 
-    // sendAMessage
-    // BFS lookup slot with the same name, evaluate found object, return the resuklt
+    /**
+     * Send a message to this object
+     * Performs a BFS search for a slot with the message name
+     * Evaluates the found object and returns the result
+     */
     public SelfObject sendAMessage(String message) {
         SelfObject target = bfsLookup(message);
         return target.evaluate();
     }
 
-    // sendAMessageWithParameters
-    // copy the found object, set the slot to parameters, evaluate the copy
+    /**
+     * Send a message with parameters
+     * Finds the slot by name, copies it, assigns the parameter to the "parameter" slot
+     * Evaluates the copy and returns the result
+     */
     public SelfObject sendAMessageWithParameters(String message, SelfObject parameter) {
-
         SelfObject target = bfsLookup(message).copy();
-
-        // store the argument inside the object
         target.assignSlot("parameter", parameter);
         return target.evaluate();
     }
 
-    // bfslookup
-    // searching for self, parents, parents of parents
+    /**
+     * Breadth-first search to find a slot
+     * Searches this object first, then its parent slots recursively
+     * Throws an exception if slot not found
+     */
     private SelfObject bfsLookup(String message) {
-
         Queue<SelfObject> queue = new LinkedList<>();
         Set<SelfObject> visited = new HashSet<>();
 
@@ -98,66 +102,75 @@ public class SelfObject {
         while (!queue.isEmpty()) {
             SelfObject current = queue.poll();
 
-            // check if the current object has the slot
+            // Check current object's slots
             if (current.slots.containsKey(message)) {
                 return current.slots.get(message);
             }
 
-            visted.add(current);
+            visited.add(current);
 
-            // add parent slots to the queue
+            // Add parent slots to the queue
             for (String parentSlot : current.parentSlots) {
                 SelfObject parent = current.slots.get(parentSlot);
-
-                if (!visited.contains(parent)) {
+                if (parent != null && !visited.contains(parent)) {
                     queue.add(parent);
                 }
             }
+        }
 
         throw new RuntimeException("Slot not found: " + message);
     }
 
-    // assignSlot
-    // set slot name 
+    /**
+     * Assign a slot to the object
+     * @param slotName Name of the slot
+     * @param value SelfObject to assign
+     */
     public void assignSlot(String slotName, SelfObject value) {
         slots.put(slotName, value);
     }
 
-    // makeParent
-    // mark an existing slot as a parent slot
+    /**
+     * Designate a slot as a parent slot
+     * @param slotName Name of the slot to mark as parent
+     */
     public void makeParent(String slotName) {
         parentSlots.add(slotName);
     }
 
-    // assignParentSlot
-    public voic assignParentSlot(String slotName, SelfObject value) {
+    /**
+     * Assign a slot and make it a parent
+     * @param slotName Name of the slot
+     * @param value SelfObject to assign
+     */
+    public void assignParentSlot(String slotName, SelfObject value) {
         assignSlot(slotName, value);
         makeParent(slotName);
     }
 
-    // print
-    // representation of the object
+    /**
+     * Print a textual representation of the object
+     * - Shows slots and marks parent slots
+     * - Prints primitive value if present
+     */
     public String print() {
-
-        // primitive prints directly
-        if (primitiveValue != null) 
+        if (primitiveValue != null) {
             return primitiveValue.toString();
-        
+        }
+
         StringBuilder sb = new StringBuilder();
         sb.append("{ ");
-
         for (String k : slots.keySet()) {
             sb.append(k);
-
-            if (parentSlots.contains(k))
-                sb.append(" (parent)");
+            if (parentSlots.contains(k)) sb.append(" (parent)");
             sb.append(" ");
         }
         sb.append("}");
         return sb.toString();
     }
 
-    // helper methods for building objects
+    // Helper setters
+
     public void setMessages(List<String> msgs) {
         messages = msgs;
     }
@@ -169,7 +182,13 @@ public class SelfObject {
     public void setPrimitiveFunction(Primitive function) {
         primitiveFunction = function;
     }
-        
-}
+
+    // Primitive interface
+
+    // Interface for primitive functions
+    // Allows defining arithmetic or other basic operations
+    public interface Primitive {
+        SelfObject apply(SelfObject obj);
+    }
 
 }
