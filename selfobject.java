@@ -150,8 +150,8 @@ public class SelfObject {
 
     /**
      * Print a textual representation of the object
-     * - Shows slots and marks parent slots
-     * - Prints primitive value if present
+     * Shows slots and marks parent slots
+     * Prints primitive value if present
      */
     public String print() {
         if (primitiveValue != null) {
@@ -192,3 +192,4 @@ public class SelfObject {
     }
 
 }
+
