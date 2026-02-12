@@ -37,18 +37,6 @@ public class SelfObject {
         if (primitiveValue != null) {
             return copy();
         }
-        if (primitiveFunction != null) {
-            SelfObject copy = copy();
-            return primitiveFunction.apply(copy);
-        }
-        if (messages != null) {
-            SelfObject copy = copy();
-            SelfObject result = copy;
-            for (String message : messages) {
-                result = copy.sendAMessage(message);
-            }
-            return result;
-        }
         return this;
     }
 
@@ -73,8 +61,37 @@ public class SelfObject {
      * Evaluates the found object and returns the result
      */
     public SelfObject sendAMessage(String message) {
-        SelfObject target = bfsLookup(message);
-        return target.evaluate();
+        SelfObject method = bfsLookup(message);
+        return method.activate(this);
+    }
+
+    /**
+     *
+     *
+     *
+    */
+    public SelfObject activate(SelfObject receiver) {
+        // primitive function
+        if (primitiveFunction != null) {
+            return primitiveFunction.apply(receiver);
+        }
+
+        // message list
+        if (messages != null) {
+            SelfObject result = receiver;
+
+            for (String message : messages) {
+                result = result.sendAMessage(message);
+            }
+
+            return result;
+        }
+            // primitive value 
+            if (primitiveValue != null) {
+                return this.copy();
+            }
+
+            return receiver;
     }
 
     /**
@@ -83,9 +100,11 @@ public class SelfObject {
      * Evaluates the copy and returns the result
      */
     public SelfObject sendAMessageWithParameters(String message, SelfObject parameter) {
-        SelfObject target = bfsLookup(message).copy();
-        target.assignSlot("parameter", parameter);
-        return target.evaluate();
+        SelfObject method = bfsLookup(message);
+        SelfObject activationObject = method.copy();
+        activationObject.assignSlot("parameter", parameter);
+
+        return activationObject.activate(this);
     }
 
     /**
@@ -192,4 +211,5 @@ public class SelfObject {
     }
 
 }
+
 
