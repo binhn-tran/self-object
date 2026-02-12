@@ -34,15 +34,19 @@ public class Main {
 
 
         // 4. Send a message with parameters
-        // Function-like behavior: pass a parameter object
-        SelfObject parameterObject = new SelfObject();
-        parameterObject.setMessages(List.of("parameter")); // this object expects a "parameter" message
-
         SelfObject primitiveTen = new SelfObject();
         primitiveTen.setPrimitiveValue(10);
 
-        SelfObject parameterResult =
-                parameterObject.sendAMessageWithParameters("parameter", primitiveTen);
+        // method object that returns the parameter
+        SelfObject returnParam = new SelfObject();
+        returnParam.setMessages(List.of("parameter"));
+
+        // object that contains the method
+        SelfObject functionObject = new SelfObject();
+        functionObject.assignSlot("get parameter", returnParam);
+
+        // send message with parameter
+        SelfObject parameterResult = functionObject.sendAMessageWithParameters("get parameter", primitiveTen);
 
         System.out.println("Expected: 10");
         System.out.println("Actual: " + parameterResult.print());
@@ -86,4 +90,5 @@ public class Main {
         System.out.println("Child object:  " + childSlot.print());
     }
 }
+
 
